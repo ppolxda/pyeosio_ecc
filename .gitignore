@@ -105,3 +105,4 @@ ENV/
 .editorconfig
 Pipfile.lock
 binwin
+key_public_test2.py

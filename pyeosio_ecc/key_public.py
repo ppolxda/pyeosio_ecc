@@ -21,6 +21,22 @@ from pyeosio_ecc import key_utils
 from pyeosio_ecc.exceptions import InputInvaild
 
 
+def _signdecode(signature):
+    '''signdecode.
+
+    @arg {string} signature - like SIG_K1_base58signature..
+    @throws {Error} invalid
+    @return {Signature}
+    '''
+    assert isinstance(signature, six.string_types)
+    match = re.match(r'^SIG_([A-Za-z0-9]+)_([A-Za-z0-9]+)$', signature)
+    assert match and len(match.groups()) == 2, 'Expecting signature like: SIG_K1_base58signature..'  # noqa
+    keyType = match.group(1)
+    keyString = match.group(2)
+    assert keyType == 'K1', 'K1 private key expected'
+    return key_utils.check_decode(keyString, keyType)
+
+
 def _recover_key(digest, signature, i):
     ''' Recover the public key from the sig
         http://www.secg.org/sec1-v2.pdf
@@ -118,29 +134,7 @@ class PublicKey(object):
         self.pubkey_prefix = pubkey_prefix
         self._vk = vk
 
-    # @classmethod
-    # def __load_pubkey(cls, pubkey, pubkey_prefix='EOS', encoding='utf8'):
-    #     assert isinstance(pubkey, six.string_types)
-    #     assert isinstance(pubkey_prefix, six.string_types)
-    #     if pubkey.startswith(pubkey_prefix):
-    #         pubkey = pubkey[len(pubkey_prefix):]
-
-    #     # if isinstance(pubkey, six.string_types):
-    #     #     pubkey = pubkey.encode(encoding)
-
-    #     return key_utils.check_decode(pubkey)
-
-    def _recovery_pubkey_param(self, digest, signature):
-        ''' Use to derive a number that will allow for the easy recovery
-            of the public key from the signature
-        '''
-        for i in range(0, 4):
-            p = _recover_key(digest, signature, i)
-            if (p.to_string() == self._vk.to_string()):
-                return i
-
     def to_public(self):
-        ''' '''
         cmp = compress_pubkey(self._vk)
         return self.pubkey_prefix + key_utils.check_encode(cmp)
 
@@ -148,12 +142,29 @@ class PublicKey(object):
         return self.to_public()
 
     def verify(self, sign, content):
-        return self._vk.verify(sign, content, hashfunc=hashlib.sha256,
-                               sigdecode=ecdsa.util.sigdecode_der)
+        return self._vk.verify_digest(sign, content,
+                                      sigdecode=ecdsa.util.sigdecode_string)
 
     # ----------------------------------------------
     #        create pubkey
     # ----------------------------------------------
+
+    @classmethod
+    def recover(cls, digest, signature, encoding='utf8'):
+        sign = _signdecode(signature)
+        recover_param = six.byte2int(sign[:1]) - 4 - 27
+        signdata = sign[1:]
+
+        if isinstance(digest, six.string_types):
+            digest = digest.encode(encoding)
+
+        digest = hashlib.sha256(digest).digest()
+
+        return PublicKey(_recover_key(
+            digest,
+            signdata,
+            recover_param)
+        )
 
     @classmethod
     def is_valid(cls, pubkey, pubkey_prefix='EOS'):
@@ -201,8 +212,10 @@ class PublicKey(object):
             @arg {string} [pubkey_prefix= 'EOS'] - public key prefix
             @return PublicKey or `null` (invalid)
         '''
-        # return cls.fromStringOrThrow(public_key, pubkey_prefix)
-        return cls.from_stringorthrow(pubkey, pubkey_prefix)
+        try:
+            return cls.from_stringorthrow(pubkey, pubkey_prefix='EOS')
+        except Exception:
+            return None
 
     @classmethod
     def from_stringorthrow(cls, pubkey, pubkey_prefix='EOS'):
@@ -225,3 +238,14 @@ class PublicKey(object):
         keyString = match.group(2)
         assert keyType == 'K1', 'K1 private key expected'
         return cls.from_buffer(key_utils.check_decode(keyString, keyType))
+
+    @classmethod
+    def from_(cls, obj, pubkey_prefix='EOS'):
+        if isinstance(obj, six.string_types):
+            return cls.from_string(obj, pubkey_prefix)
+        elif isinstance(obj, six.binary_type):
+            return cls.from_buffer(obj, pubkey_prefix)
+        elif isinstance(obj, ecdsa.ellipticcurve.Point):
+            return cls.from_point(obj, pubkey_prefix)
+        else:
+            raise TypeError('from_ obj invaild')

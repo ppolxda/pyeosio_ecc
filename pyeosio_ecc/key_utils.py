@@ -49,8 +49,8 @@ def check_decode(keystr, keytype=None):
     keystr = keystr[0:-4]
 
     if keytype == 'sha256x2':
-        newcheck = hashlib.sha256(
-            hashlib.sha256(keystr).digest()).digest()[0:-4]
+        sha256one = hashlib.sha256(keystr).digest()
+        newcheck = hashlib.sha256(sha256one).digest()[0:-4]
     else:
         check = keystr
         if keytype:
