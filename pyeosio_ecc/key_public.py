@@ -161,9 +161,7 @@ class PublicKey(object):
         digest = hashlib.sha256(digest).digest()
 
         return PublicKey(_recover_key(
-            digest,
-            signdata,
-            recover_param)
+            digest, signdata, recover_param)
         )
 
     @classmethod

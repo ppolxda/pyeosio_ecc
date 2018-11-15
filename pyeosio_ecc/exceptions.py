@@ -12,4 +12,3 @@ class SignatureInvaild(SignBaseError):
 
 class InputInvaild(SignBaseError):
     pass
- 
