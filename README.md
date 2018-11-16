@@ -7,7 +7,7 @@ eosio.
 install
 
 ```bash
-pip2 install git+https://github.com/ppolxda/pyeosio_ecc.git
+pip install git+https://github.com/ppolxda/pyeosio_ecc.git
 ```
 
 ## key_public examples
