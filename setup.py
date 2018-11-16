@@ -4,7 +4,7 @@ u"""
 
 @author: asdfsdf
 
-@desc: 数据包打包
+@desc: setup
 """
 import os
 import sys
@@ -28,7 +28,7 @@ setup(
         'six'
     ],
     packages=find_packages('.'),
-    python_requires=">=2.7,<=3.0.*",
+    python_requires=">=2.7,>=3.0.*",
     author="ppolxda",
     author_email="sa@sa.com",
     description="pyeosio_ecc",
