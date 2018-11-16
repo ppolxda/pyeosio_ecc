@@ -25,7 +25,8 @@ setup(
     name="pyeosio_ecc",
     version="0.0.1",
     install_requires=[
-        'six'
+        'six',
+        'base58'
     ],
     packages=find_packages('.'),
     python_requires=">=2.7,>=3.0.*",
