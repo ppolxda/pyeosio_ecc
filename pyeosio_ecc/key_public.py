@@ -19,6 +19,7 @@ from ecdsa.numbertheory import inverse_mod
 from ecdsa.curves import orderlen as orderlen_f
 from pyeosio_ecc import key_utils
 from pyeosio_ecc.exceptions import InputInvaild
+from pyeosio_ecc.exceptions import SignatureInvaild
 
 
 def _signdecode(signature):
@@ -160,9 +161,11 @@ class PublicKey(object):
 
         digest = hashlib.sha256(digest).digest()
 
-        return PublicKey(_recover_key(
-            digest, signdata, recover_param)
-        )
+        pubkey = _recover_key(digest, signdata, recover_param)
+        if not pubkey:
+            raise SignatureInvaild('sign invaild')
+
+        return PublicKey(pubkey)
 
     @classmethod
     def is_valid(cls, pubkey, pubkey_prefix='EOS'):
